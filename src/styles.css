@@ -114,3 +114,10 @@ h2 { margin: 5px 0 0; font-size: 19px; }
   line-height: 1.45;
 }
 .block-layout-fields label { margin-bottom: 13px; }
+
+/* Diagnostics: visible, actionable engineering checks */
+.topology-diagnostics { margin-top: 10px; max-height: 190px; overflow-y: auto; }
+.topology-diagnostics p { font-size: 12px; line-height: 1.5; margin: 6px 0; padding: 9px 10px; border-radius: 7px; }
+.diagnostic-ok { color: #205a43; background: #eaf7f0; }
+.diagnostic-error { color: #8e2828; background: #fff0ef; }
+.diagnostic-warning { color: #795514; background: #fff7e5; }

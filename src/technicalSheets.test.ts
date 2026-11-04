@@ -80,6 +80,13 @@ describe("Folha 1 fiel ao diagrama de referência", () => {
     expect(svg).not.toContain("GATEWAY 02");
     expect(svg).not.toContain("UNIDADE REMOTA 02");
   });
+  it("apresenta INTERNET, WAN e firewalls no modelo de infraestrutura", () => {
+    const svg = buildTechnicalSheets(project({template:"infra",remoteSites:1}))[0]!.svg;
+    expect(svg).toContain("INTERNET");
+    expect(svg).toContain("FIREWALL 00");
+    expect(svg).toContain("LINK A DEFINIR");
+    expect(svg).not.toContain("GATEWAY E1 / FXS");
+  });
   it("escapa nomes de sites e indicadores potencialmente perigosos", () => {
     const p = project();
     p.spec = {...p.spec,mainSiteName:"<script>alert(1)</script>",lanLabel:'VLAN & "Rede"'} as typeof p.spec;

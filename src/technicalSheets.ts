@@ -18,7 +18,6 @@ const H = 1000;
 const INK = "#25303a";
 const BLUE = "#1c50b4";
 const RED = "#b93434";
-const SOFT = "#f1f4f7";
 const GRAY = "#707b84";
 const LIGHT = "#c5cbd1";
 
@@ -43,9 +42,6 @@ function path(d: string, color = BLUE, sw = 2, dash = ""): string {
 function text(x: number, y: number, value: unknown, size = 17, color = INK, anchor = "start", bold = false): string {
   return '<text x="' + x + '" y="' + y + '" fill="' + color + '" font-size="' + size +
     '" text-anchor="' + anchor + '" font-weight="' + (bold ? "700" : "400") + '">' + esc(value) + '</text>';
-}
-function multiline(x: number, y: number, lines: string[], size = 15, color = INK, align = "start"): string {
-  return lines.map((s, i) => text(x, y + 19 * i, s, size, color, align)).join("");
 }
 function circle(x: number, y: number, r: number, fill = "white", stroke = INK): string {
   return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.2"/>';
@@ -290,7 +286,7 @@ function rack(x: number, y: number, label: string, units: number, equipment: {u:
     + text(x + w/2, y + 634, '19"  /  ' + units + "U", 15, INK, "middle");
   return s;
 }
-function racks(spec: ExtendedSpec): string {
+function racks(_spec: ExtendedSpec): string {
   let s = text(800, 145, "DISTRIBUIÇÃO FÍSICA DE BASTIDORES", 23, BLUE, "middle", true);
   const core: {u:number,span:number,name:string,type:"server"|"switch"|"gateway"|"storage"}[] = [
     {u:37,span:2,name:"Servidor Virtualização 00",type:"server"},
@@ -351,7 +347,7 @@ export async function exportTechnicalPdf(sheets: TechnicalSheet[]): Promise<void
       if (!ctx) throw new Error("Canvas indisponível para exportação");
       ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height);
       ctx.drawImage(img,0,0,canvas.width,canvas.height);
-      pdf.addImage(canvas.toDataURL("image/png"),"PNG",0,0,420,262.5);
+      pdf.addImage(canvas.toDataURL("image/png"),"PNG",0,17.25,420,262.5);
     } finally { URL.revokeObjectURL(source); }
   }
   pdf.save("axe-diagram-studio-caderno-tecnico.pdf");

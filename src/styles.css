@@ -121,3 +121,13 @@ h2 { margin: 5px 0 0; font-size: 19px; }
 .diagnostic-ok { color: #205a43; background: #eaf7f0; }
 .diagnostic-error { color: #8e2828; background: #fff0ef; }
 .diagnostic-warning { color: #795514; background: #fff7e5; }
+
+/* Stable scalable A3 sheet viewport: fit-to-window or native SVG pixel zoom. */
+.sheet-view-controls { display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+.sheet-view-controls label { margin:0; font-size:11px; color:#52667b; }
+.sheet-view-controls select { width:auto; margin:0; font-size:12px; padding:6px 8px; }
+.sheet-preview-fit .sheet-artwork { width:100%; max-width:1600px; flex:0 1 auto; }
+.sheet-preview-zoom { justify-content:flex-start; align-items:flex-start; }
+.sheet-artwork { min-width:0; }
+.sheet-artwork svg { display:block; width:100%; min-width:0; height:auto; background:#fff; box-shadow:0 7px 25px #273a531f; }
+@media (max-width:850px) { .sheet-view-controls { align-items:flex-start; } }

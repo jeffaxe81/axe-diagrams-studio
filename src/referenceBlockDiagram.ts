@@ -65,10 +65,10 @@ function cloud(x: number, y: number, label: string, w = 170): string {
     '<path d="' + shape + '" fill="#fff" stroke="' + BLUE + '" stroke-width="1.3" stroke-dasharray="5 3"/>' +
     T(86, 50, label, 17, BLUE, "middle", true) + "</g>";
 }
-function smallGateway(x: number, y: number, label: string, w = 132, h = 93): string {
+function smallGateway(x: number, y: number, label: string, w = 132, h = 93, head = "DTCV / E1"): string {
   let s = R(x, y, w, h, METAL, INK, 1.5, 1) +
     R(x + 6, y + 9, w - 12, 16, "#bcc4ca", "#75828c", .8) +
-    T(x + w / 2, y + 21, "DTCV / E1", 11, INK, "middle", true) +
+    T(x + w / 2, y + 21, head, 11, INK, "middle", true) +
     R(x + 9, y + 32, w - 18, h - 42, "#eef0f2", EDGE, .9);
   for (let i = 0; i < 4; i++) {
     const px = x + 15 + i * (w - 38) / 4;
@@ -126,13 +126,13 @@ function ups(x: number, y: number): string {
 function lanBus(x: number, y: number, width: number, title: string): string {
   return R(x, y, width, 18, PAPER, BLUE, 2.5, 9) + T(x + width / 2, y + 13, title, 12, BLUE, "middle", true);
 }
-function remote(x: number, name: string, ordinal: number, trunkLabel: string): string {
+function remote(x: number, name: string, ordinal: number, trunkLabel: string, infra = false): string {
   let s = R(x, 133, 245, 323, "none", "#87919b", 1.2, 0, "5 4") +
     T(x + 10, 148, "SITE " + ordinal + " — " + name, 12, RED, "start", true) +
-    T(x + 123, 170, "STFC", 16, BLUE, "middle", true) +
+    T(x + 123, 170, infra ? "WAN" : "STFC", 16, BLUE, "middle", true) +
     tag(x + 123, 184, trunkLabel) +
     P("M " + (x + 123) + " 188 V 198", RED, 1.2);
-  s += smallGateway(x + 52, 204, "GATEWAY E1 / FXS", 141, 76);
+  s += smallGateway(x + 52, 204, infra ? "ROTEADOR / GATEWAY" : "GATEWAY E1 / FXS", 141, 76, infra ? "GATEWAY / IP" : "DTCV / E1");
   s += L(x + 123, 280, x + 123, 301, BLUE, 1.6);
   s += smallSwitch(x + 33, 305, 180, String(ordinal + 1).padStart(2, "0"), 26);
   s += L(x + 123, 331, x + 123, 345, BLUE, 1.6);
@@ -151,24 +151,25 @@ export function referenceBlockDiagram(project: DiagramProject): string {
   const remote2 = spec.remoteSite2Name?.trim() || "UNIDADE REMOTA 02";
   const remoteCount = Math.max(0, Math.min(8, Math.floor(spec.remoteSites || 0)));
   const gatewayCount = Math.max(1, Math.min(4, Math.floor(spec.gatewayCount ?? 4)));
-  const label = spec.trunkType?.trim() || "STFC / SIP (A DEFINIR)";
+  const infra = spec.template === "infra";
+  const label = spec.trunkType?.trim() || (infra ? "LINK / WAN (A DEFINIR)" : "STFC / SIP (A DEFINIR)");
   const lan = spec.lanLabel?.trim() || "LAN CORPORATIVA";
   let s = "";
   // Primary site and two remote sites share the same engineering sheet composition.
   s += R(62, 133, 940, 709, "none", "#92979c", 1.1) +
     T(79, 155, mainName, 16, INK, "start", true) +
     T(983, 155, "CENTRAL", 10, GRAY, "end");
-  s += cloud(343, 169, "STFC", 165) +
-    T(425, 261, label, 12, RED, "middle", true);
+  s += cloud(343, 169, infra ? "INTERNET" : "STFC", 165) +
+    T(90, 264, label, 12, RED, "start", true);
   for (let i = 0; i < gatewayCount; i++) {
     const x = 112 + i * 166;
     const center = x + 70;
     s += P("M 425 238 V 258 H " + center + " V 286", RED, 1.2);
-    s += smallGateway(x, 287, "GATEWAY " + String(i).padStart(2, "0"), 139, 87);
+    s += smallGateway(x, 287, (infra ? "FIREWALL " : "GATEWAY ") + String(i).padStart(2, "0"), 139, 87, infra ? "FIREWALL / GW" : "DTCV / E1");
     s += P("M " + center + " 374 V 406", INK, 1.4);
   }
-  s += T(84, 289, "TRONCOS", 11, RED, "start", true) +
-    tag(87, 305, "SIP / E1");
+  s += T(84, 289, infra ? "LINKS" : "TRONCOS", 11, RED, "start", true) +
+    tag(87, 305, infra ? "WAN" : "SIP / E1");
   // Two real horizontal switches, like the reference blueprint.
   s += smallSwitch(94, 405, 655, "00", 33);
   s += smallSwitch(94, 450, 655, "01", 33);
@@ -187,7 +188,7 @@ export function referenceBlockDiagram(project: DiagramProject): string {
   // Wide Gigabit LAN bus, endpoints attached vertically.
   s += lanBus(615, 485, 761, lan);
   s += P("M 749 483 V 485", BLUE, 2.5);
-  s += T(617, 468, "REDE GIGABIT / SWITCH 00-01", 12, BLUE, "start", true);
+  s += T(617, 530, "REDE GIGABIT / SWITCH 00-01", 12, BLUE, "start", true);
   // Physical host visualization at the bottom left of the main site.
   s += T(103, 529, "SERVIDORES / VIRTUALIZAÇÃO", 12, INK, "start", true);
   const physical = [
@@ -197,7 +198,7 @@ export function referenceBlockDiagram(project: DiagramProject): string {
   physical.forEach((name, i) => {
     const y = 550 + i * 49;
     s += server(102, y, name, 201, 30);
-    s += P("M 306 " + (y + 15) + " H 386 V 483", INK, 1.05);
+    s += P("M 102 " + (y + 15) + " H 82 V 446 H 94", INK, 1.05);
   });
   // Workstations, softphone/telephony and record services on the blue LAN.
   s += display(481, 571, "OPERAÇÃO") +
@@ -219,8 +220,8 @@ export function referenceBlockDiagram(project: DiagramProject): string {
   }
   s += T(90, 819, "* DISTRIBUIÇÃO DA VIRTUALIZAÇÃO: VER FOLHA 2", 16, RED, "start", true);
   // Two compact remote sites on the upper right, side by side.
-  if (remoteCount >= 1) s += remote(1025, remote1, 1, "TRONCO A DEFINIR");
-  if (remoteCount >= 2) s += remote(1281, remote2, 2, "TRONCO A DEFINIR");
+  if (remoteCount >= 1) s += remote(1025, remote1, 1, infra ? "LINK A DEFINIR" : "TRONCO A DEFINIR", infra);
+  if (remoteCount >= 2) s += remote(1281, remote2, 2, infra ? "LINK A DEFINIR" : "TRONCO A DEFINIR", infra);
   if (remoteCount > 2) s += T(1280, 462, "+ " + (remoteCount - 2) + " unidade(s) adicional(is) — ver topologia", 12, RED, "middle", true);
   // Gateway between the head-end LAN and web interconnection.
   s += router(1370, 477, "ROTEADOR") +

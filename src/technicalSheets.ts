@@ -1,4 +1,5 @@
 import type { DiagramProject, DiagramSpec } from "./diagram";
+import { referenceBlockDiagram } from "./referenceBlockDiagram";
 
 export type SheetId = "blocks" | "virtualization" | "resources" | "connections" | "racks";
 export interface TechnicalSheet {
@@ -46,30 +47,6 @@ function text(x: number, y: number, value: unknown, size = 17, color = INK, anch
 function circle(x: number, y: number, r: number, fill = "white", stroke = INK): string {
   return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.2"/>';
 }
-function cloud(x: number, y: number, label: string): string {
-  const d = 'M ' + (x + 37) + ' ' + (y + 67) +
-    ' C ' + (x - 8) + ' ' + (y + 67) + ', ' + (x - 5) + ' ' + (y + 19) + ', ' + (x + 29) + ' ' + (y + 25) +
-    ' C ' + (x + 36) + ' ' + (y - 11) + ', ' + (x + 88) + ' ' + (y - 15) + ', ' + (x + 104) + ' ' + (y + 23) +
-    ' C ' + (x + 151) + ' ' + (y + 15) + ', ' + (x + 162) + ' ' + (y + 67) + ', ' + (x + 119) + ' ' + (y + 67) + ' Z';
-  return '<path d="' + d + '" fill="#fff" stroke="' + BLUE + '" stroke-width="2" stroke-dasharray="6 3"/>'
-    + text(x + 79, y + 44, label, 15, BLUE, "middle", true);
-}
-function appliance(x: number, y: number, w: number, h: number, label: string, type: "server"|"switch"|"gateway"|"storage" = "server"): string {
-  let s = rect(x, y, w, h, "#e7e9ec", INK, 1.8);
-  s += rect(x + 8, y + 8, Math.max(w - 16, 1), h - 16, "#d6dade", GRAY, 1);
-  if (type === "switch") {
-    for (let i = 0; i < Math.min(18, Math.floor((w - 35) / 14)); i++) {
-      s += rect(x + 14 + i * 14, y + h / 2 - 5, 10, 10, "#eff4f6", "#67727a", .8);
-    }
-  } else if (type === "gateway") {
-    for (let i = 0; i < 6; i++) s += rect(x + 18 + i * 18, y + h / 2 - 8, 13, 16, "#f3f5f6", INK, 1);
-  } else {
-    for (let i = 0; i < 9; i++) s += line(x + 18, y + 12 + i * (h - 24) / 10, x + Math.min(w * .52, w - 65), y + 12 + i * (h - 24) / 10, "#737d86", 1.3);
-    s += circle(x + w - 27, y + h / 2, 4, "#2b956e", "#206347");
-  }
-  s += text(x + w / 2, y + h + 23, label, 14, INK, "middle", true);
-  return s;
-}
 function systemBox(x: number, y: number, w: number, h: number, label: string, fill = "#ffffff", color = INK): string {
   return rect(x, y, w, h, fill, color, 1.6) + text(x + w / 2, y + h / 2 + 5, label, 15, color, "middle", true);
 }
@@ -109,57 +86,6 @@ function sheetFrame(spec: ExtendedSpec, title: string, index: number, total: num
     + text(1431, 925, "FOLHA " + index + " / " + total, 12, INK, "start", true)
     + '</g></svg>';
   return out;
-}
-function mainSite(x: number, y: number, project: DiagramProject): string {
-  const spec = project.spec as ExtendedSpec;
-  let s = dottedRegion(x, y, 944, 720, "SITE PRINCIPAL — NÚCLEO DE COMUNICAÇÃO");
-  s += cloud(x + 275, y + 54, "STFC / SIP");
-  s += text(x + 355, y + 143, spec.trunkType || "Entroncamento a definir", 14, RED, "middle");
-  s += path("M " + (x + 353) + " " + (y + 121) + " V " + (y + 191));
-  if (spec.includeSbc) {
-    s += appliance(x + 254, y + 194, 196, 62, "SBC / SSW", "gateway");
-    s += path("M " + (x + 353) + " " + (y + 279) + " V " + (y + 326));
-  }
-  s += appliance(x + 520, y + 194, 215, 62, "PABX / SIP", "server");
-  s += path("M " + (x + 450) + " " + (y + 225) + " H " + (x + 520));
-  s += appliance(x + 120, y + 350, 540, 48, "SWITCHES DE DISTRIBUIÇÃO", "switch");
-  s += path("M " + (x + 628) + " " + (y + 279) + " V " + (y + 350));
-  s += ethernet(x + 100, y + 442, 750, spec.lanLabel || "LAN / REDE CORPORATIVA");
-  s += path("M " + (x + 395) + " " + (y + 398) + " V " + (y + 442));
-  const labels = ["SERVIDOR VIRTUALIZAÇÃO", "SERVIDOR DE SERVIÇOS", spec.includeRecord ? "SERVIDOR DE GRAVAÇÃO" : "SERVIDOR DE DADOS", spec.includeBackup ? "STORAGE / BACKUP" : "ARMAZENAMENTO"];
-  for (let i = 0; i < labels.length; i++) {
-    const bx = x + 85 + i * 208;
-    s += appliance(bx, y + 518, 175, 63, labels[i], i === 3 ? "storage" : "server");
-    s += path("M " + (bx + 87) + " " + (y + 518) + " V " + (y + 469));
-  }
-  s += text(x + 82, y + 675, "Distribuição de serviços e recursos: ver folha 2", 14, RED, "start", true);
-  return s;
-}
-function remoteSite(x: number, y: number, width: number, height: number, name: string): string {
-  let s = dottedRegion(x, y, width, height, name);
-  const m = x + width / 2;
-  s += text(m, y + 52, "STFC / SIP", 15, BLUE, "middle", true);
-  s += path("M " + m + " " + (y + 60) + " V " + (y + 80), RED, 1.5);
-  s += appliance(m - 94, y + 85, 188, 55, "GATEWAY / SOBREVIVÊNCIA", "gateway");
-  s += appliance(m - 94, y + 183, 188, 39, "SWITCH LOCAL", "switch");
-  s += path("M " + m + " " + (y + 162) + " V " + (y + 183));
-  s += ethernet(m - 96, y + 262, 192, "LAN LOCAL");
-  s += path("M " + m + " " + (y + 244) + " V " + (y + 262));
-  s += text(m, y + 312, "Rede e telefonia remota", 13, GRAY, "middle");
-  return s;
-}
-function blocks(spec: ExtendedSpec, project: DiagramProject): string {
-  let s = mainSite(65, 126, project);
-  const count = Math.max(0, Math.min(8, Number(spec.remoteSites) || 0));
-  const shown = Math.min(2, count);
-  for (let i = 0; i < shown; i++) {
-    const y = 135 + i * 357;
-    s += remoteSite(1035, y, 490, 325, "UNIDADE REMOTA " + String(i + 1).padStart(2, "0"));
-    s += path("M 1009 " + (y + 160) + " H 1026 V " + (y + 276) + " H 1035", BLUE, 1.7, "5 4");
-  }
-  if (count > shown) s += text(1278, 835, "+ " + (count - shown) + " unidade(s) adicional(is) no projeto", 15, RED, "middle");
-  if (count === 0) s += text(1278, 330, "SEM UNIDADES REMOTAS", 17, GRAY, "middle");
-  return s;
 }
 function vmLabels(spec: DiagramSpec): string[] {
   if (spec.template === "infra") return ["Aplicação", "Banco de dados", "Monitoramento", "Servidor web", ...(spec.includeBackup ? ["Backup"] : [])];
@@ -309,7 +235,7 @@ function racks(_spec: ExtendedSpec): string {
 export function buildTechnicalSheets(project: DiagramProject): TechnicalSheet[] {
   const spec = project.spec as ExtendedSpec;
   const entries: {id:SheetId, title:string, name:string, body:string, note:string}[] = [
-    {id:"blocks",title:"Diagrama em bloco",name:"01-diagrama-blocos",body:blocks(spec,project),note:"Desenho conceitual: validar topologia, canais e interfaces."},
+    {id:"blocks",title:"Diagrama em bloco",name:"01-diagrama-blocos",body:referenceBlockDiagram(project),note:"Desenho conceitual: validar topologia, canais e interfaces."},
     {id:"virtualization",title:"Distribuição da virtualização",name:"02-virtualizacao",body:virtualization(spec),note:"Distribuição demonstrativa: validar hosts e serviços."},
     {id:"resources",title:"Relatório de máquinas virtuais",name:"03-relatorio-vms",body:resources(spec),note:"Dimensionamento técnico não informado; não considerar valores implícitos."},
     {id:"connections",title:"Conexões",name:"04-conexoes",body:connections(spec),note:"Pontos de rede e identificação de interfaces a conferir em campo."},

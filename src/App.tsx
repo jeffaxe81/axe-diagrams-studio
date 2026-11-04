@@ -5,6 +5,7 @@ import {
   type DiagramNode, type DiagramProject, type DiagramSpec, type Template,
 } from "./diagram";
 import { EquipmentNode } from "./EquipmentNode";
+import { validateProject, inspectTopology } from "./topologyValidation";
 import { buildTechnicalSheets, downloadTechnicalSvg, exportTechnicalPdf } from "./technicalSheets";
 
 type ProjectSpec = DiagramSpec & {
@@ -39,6 +40,7 @@ export default function App() {
   const project: DiagramProject = {version:1, spec, nodes, edges};
   const sheets = useMemo(() => buildTechnicalSheets({version:1,spec,nodes,edges}),[spec,nodes,edges]);
   const activeSheet = sheets[sheetIndex] ?? sheets[0]!;
+  const findings = useMemo(() => inspectTopology(project), [spec, nodes, edges]);
   const visualNodes = useMemo(() => nodes.map(n => ({...n,type:"equipment",style:undefined})),[nodes]);
 
   useEffect(() => {saveProject({version:1,spec,nodes,edges});},[spec,nodes,edges]);
@@ -78,9 +80,8 @@ export default function App() {
       const parsed: unknown = JSON.parse(await file.text());
       if(!parsed || typeof parsed !== "object") throw new Error("Arquivo inválido.");
       const value = parsed as Partial<DiagramProject>;
-      if(value.version!==1 || !value.spec || !Array.isArray(value.nodes) || !Array.isArray(value.edges)) {
-        throw new Error("Projeto incompatível com a versão 1.");
-      }
+      const validation = validateProject(value);
+      if (!validation.valid) throw new Error(validation.error);
       setSpec(value.spec as ProjectSpec);setNodes(value.nodes);setEdges(value.edges);
       setSelectedId(null);setVersion(v=>v+1);
       setMessage("Projeto importado.");
@@ -171,6 +172,15 @@ export default function App() {
             </label>
             <button className="danger" onClick={removeSelected}>Excluir equipamento</button>
           </div> : <p className="hint">Use o modo Editor para arrastar equipamentos, alterar nomes e conectar as interfaces.</p>}
+          <div className="separator"/>
+          <span className="field-title">Diagnóstico da topologia</span>
+          <div className="topology-diagnostics" aria-live="polite">
+            {findings.length === 0 ? <p className="diagnostic-ok">Nenhuma inconsistência estrutural detectada.</p> : findings.map((finding, index) =>
+              <p className={finding.level === "error" ? "diagnostic-error" : "diagnostic-warning"} key={`${finding.code}-${index}`}>
+                <strong>{finding.level === "error" ? "Erro" : "Atenção"}:</strong> {finding.message}
+              </p>
+            )}
+          </div>
           <div className="separator"/>
           <span className="field-title">Exportações</span>
           <button className="primary wide export-main" disabled={exporting} onClick={()=>void pdfSheets()}>

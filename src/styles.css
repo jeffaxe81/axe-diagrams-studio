@@ -98,3 +98,19 @@ h2 { margin: 5px 0 0; font-size: 19px; }
   .sheet-tabbar button { flex:1 1 140px; }
   .equip-node { width:180px; }
 }
+
+/* Reference-faithful site and gateway questionnaire controls. */
+.block-layout-fields {
+  padding: 14px 13px 2px;
+  background: #f8fafc;
+  border: 1px solid #dbe4ed;
+  border-radius: 10px;
+  margin: 5px 0 16px;
+}
+.block-layout-fields .field-title {
+  display: block;
+  margin-bottom: 15px;
+  color: #2e5e91;
+  line-height: 1.45;
+}
+.block-layout-fields label { margin-bottom: 13px; }

@@ -72,8 +72,7 @@ describe("Folha 1 fiel ao diagrama de referência", () => {
   });
   it("permite configurar quantidade de gateways e nomes de sites sem inventar equipamentos", () => {
     const p = project({remoteSites:1});
-    p.spec = {...p.spec,gatewayCount:2,mainSiteName:"Fortaleza",remoteSite1Name:"Juazeiro do Norte"}
-      as typeof p.spec;
+    p.spec = {...p.spec,gatewayCount:2,mainSiteName:"Fortaleza",remoteSite1Name:"Juazeiro do Norte"} as typeof p.spec;
     const svg = buildTechnicalSheets(p)[0]!.svg;
     expect(svg).toContain("Fortaleza");
     expect(svg).toContain("Juazeiro do Norte");
@@ -83,8 +82,7 @@ describe("Folha 1 fiel ao diagrama de referência", () => {
   });
   it("escapa nomes de sites e indicadores potencialmente perigosos", () => {
     const p = project();
-    p.spec = {...p.spec,mainSiteName:"<script>alert(1)</script>",lanLabel:'VLAN & "Rede"'}
-      as typeof p.spec;
+    p.spec = {...p.spec,mainSiteName:"<script>alert(1)</script>",lanLabel:'VLAN & "Rede"'} as typeof p.spec;
     const svg = buildTechnicalSheets(p)[0]!.svg;
     expect(svg).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
     expect(svg).toContain("VLAN &amp; &quot;Rede&quot;");

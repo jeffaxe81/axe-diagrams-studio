@@ -12,6 +12,10 @@ type ProjectSpec = DiagramSpec & {
   revision?: string;
   trunkType?: string;
   lanLabel?: string;
+  mainSiteName?: string;
+  remoteSite1Name?: string;
+  remoteSite2Name?: string;
+  gatewayCount?: number;
 };
 const nodeTypes = {equipment: EquipmentNode};
 
@@ -96,7 +100,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="topbrand"><span className="brand">AXE</span> <strong>Diagram Studio</strong><span className="version">ENGENHARIA · 0.2</span></div>
+        <div className="topbrand"><span className="brand">AXE</span> <strong>Diagram Studio</strong><span className="version">ENGENHARIA · 0.3</span></div>
         <span className="status">● Sistema local • edição técnica • 5 pranchas</span>
       </header>
       <div className="workspace">
@@ -132,6 +136,22 @@ export default function App() {
           <label>Unidades remotas (0 a 8)
             <input type="number" min={0} max={8} value={spec.remoteSites} onChange={e=>patchSpec({remoteSites:Math.max(0,Math.min(8,Number(e.target.value)||0))})}/>
           </label>
+          <div className="block-layout-fields">
+            <span className="field-title">Folha 1 · disposição semelhante à referência</span>
+            <label>Nome do site principal
+              <input placeholder="Site principal" value={spec.mainSiteName ?? ""} onChange={e=>patchSpec({mainSiteName:e.target.value})}/>
+            </label>
+            <label>Gateways na central (1 a 4)
+              <input type="number" min={1} max={4} value={spec.gatewayCount ?? 4}
+                onChange={e=>patchSpec({gatewayCount:Math.max(1,Math.min(4,Number(e.target.value)||1))})}/>
+            </label>
+            {spec.remoteSites >= 1 && <label>Identificação da unidade remota 01
+              <input placeholder="Ex.: Juazeiro do Norte" value={spec.remoteSite1Name ?? ""} onChange={e=>patchSpec({remoteSite1Name:e.target.value})}/>
+            </label>}
+            {spec.remoteSites >= 2 && <label>Identificação da unidade remota 02
+              <input placeholder="Ex.: Sobral" value={spec.remoteSite2Name ?? ""} onChange={e=>patchSpec({remoteSite2Name:e.target.value})}/>
+            </label>}
+          </div>
           <div className="checklist">
             <span className="field-title">Componentes</span>
             {spec.template==="telecom" && <>

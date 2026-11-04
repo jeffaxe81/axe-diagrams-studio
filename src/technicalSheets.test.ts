@@ -50,3 +50,44 @@ describe("pranchas técnicas", () => {
     expect(svg).not.toContain("<script>");
   });
 });
+
+
+describe("Folha 1 fiel ao diagrama de referência", () => {
+  it("dispõe quatro gateways e dois switches no núcleo principal", () => {
+    const block = buildTechnicalSheets(project())[0]!.svg;
+    for (const name of ["GATEWAY 00", "GATEWAY 01", "GATEWAY 02", "GATEWAY 03", "SWITCH 00", "SWITCH 01"]) {
+      expect(block).toContain(name);
+    }
+    expect(block).toContain("REDE GIGABIT / SWITCH 00-01");
+    expect(block).toContain("FOLHA 1 / 5");
+  });
+  it("dispõe duas unidades remotas lado a lado e os equipamentos locais", () => {
+    const svg = buildTechnicalSheets(project({remoteSites:2}))[0]!.svg;
+    expect(svg).toContain("UNIDADE REMOTA 01");
+    expect(svg).toContain("UNIDADE REMOTA 02");
+    expect(svg).toContain("GATEWAY E1 / FXS");
+    expect(svg).toContain("ROTEADOR");
+    expect(svg).toContain("UPS");
+    expect(svg).toContain("LAN");
+  });
+  it("permite configurar quantidade de gateways e nomes de sites sem inventar equipamentos", () => {
+    const p = project({remoteSites:1});
+    p.spec = {...p.spec,gatewayCount:2,mainSiteName:"Fortaleza",remoteSite1Name:"Juazeiro do Norte"}
+      as typeof p.spec;
+    const svg = buildTechnicalSheets(p)[0]!.svg;
+    expect(svg).toContain("Fortaleza");
+    expect(svg).toContain("Juazeiro do Norte");
+    expect(svg).toContain("GATEWAY 01");
+    expect(svg).not.toContain("GATEWAY 02");
+    expect(svg).not.toContain("UNIDADE REMOTA 02");
+  });
+  it("escapa nomes de sites e indicadores potencialmente perigosos", () => {
+    const p = project();
+    p.spec = {...p.spec,mainSiteName:"<script>alert(1)</script>",lanLabel:'VLAN & "Rede"'}
+      as typeof p.spec;
+    const svg = buildTechnicalSheets(p)[0]!.svg;
+    expect(svg).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+    expect(svg).toContain("VLAN &amp; &quot;Rede&quot;");
+    expect(svg).not.toContain("<script>");
+  });
+});

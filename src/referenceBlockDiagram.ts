@@ -221,7 +221,7 @@ export function referenceBlockDiagram(project: DiagramProject): string {
   // Two compact remote sites on the upper right, side by side.
   if (remoteCount >= 1) s += remote(1025, remote1, 1, "TRONCO A DEFINIR");
   if (remoteCount >= 2) s += remote(1281, remote2, 2, "TRONCO A DEFINIR");
-  if (remoteCount > 2) s += T(1280, 462, "+ " + (remoteCount - 2) + " sites remotos fora desta folha", 12, RED, "middle", true);
+  if (remoteCount > 2) s += T(1280, 462, "+ " + (remoteCount - 2) + " unidade(s) adicional(is) — ver topologia", 12, RED, "middle", true);
   // Gateway between the head-end LAN and web interconnection.
   s += router(1370, 477, "ROTEADOR") +
     P("M 1376 494 H 1377", BLUE, 2);

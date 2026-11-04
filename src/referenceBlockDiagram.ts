@@ -55,6 +55,12 @@ function C(cx: number, cy: number, r: number, fill = PAPER, stroke = INK): strin
   return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r +
     '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1"/>';
 }
+/** Limit long names so that customer-entered labels cannot overlap neighboring sites. */
+export function fitLabel(value: string, maxCharacters: number): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxCharacters) return normalized;
+  return normalized.slice(0, Math.max(1, maxCharacters - 1)).trimEnd() + "…";
+}
 function tag(x: number, y: number, value: string, color = RED): string {
   return T(x, y, value, 11, color, "middle", true);
 }
@@ -128,7 +134,7 @@ function lanBus(x: number, y: number, width: number, title: string): string {
 }
 function remote(x: number, name: string, ordinal: number, trunkLabel: string, infra = false): string {
   let s = R(x, 133, 245, 323, "none", "#87919b", 1.2, 0, "5 4") +
-    T(x + 10, 148, "SITE " + ordinal + " — " + name, 12, RED, "start", true) +
+    T(x + 10, 148, "SITE " + ordinal + " — " + fitLabel(name, 19), 12, RED, "start", true) +
     T(x + 123, 170, infra ? "WAN" : "STFC", 16, BLUE, "middle", true) +
     tag(x + 123, 184, trunkLabel) +
     P("M " + (x + 123) + " 188 V 198", RED, 1.2);
@@ -157,10 +163,10 @@ export function referenceBlockDiagram(project: DiagramProject): string {
   let s = "";
   // Primary site and two remote sites share the same engineering sheet composition.
   s += R(62, 133, 940, 709, "none", "#92979c", 1.1) +
-    T(79, 155, mainName, 16, INK, "start", true) +
+    T(79, 155, fitLabel(mainName, 72), 16, INK, "start", true) +
     T(983, 155, "CENTRAL", 10, GRAY, "end");
   s += cloud(343, 169, infra ? "INTERNET" : "STFC", 165) +
-    T(90, 264, label, 12, RED, "start", true);
+    T(90, 264, fitLabel(label, 35), 12, RED, "start", true);
   for (let i = 0; i < gatewayCount; i++) {
     const x = 112 + i * 166;
     const center = x + 70;
@@ -186,7 +192,7 @@ export function referenceBlockDiagram(project: DiagramProject): string {
     P("M 863 430 V 475", BLUE, 1.4);
   s += P("M 749 466 H 783", BLUE, 2);
   // Wide Gigabit LAN bus, endpoints attached vertically.
-  s += lanBus(615, 485, 761, lan);
+  s += lanBus(615, 485, 761, fitLabel(lan, 58));
   s += P("M 749 483 V 485", BLUE, 2.5);
   s += T(617, 530, "REDE GIGABIT / SWITCH 00-01", 12, BLUE, "start", true);
   // Physical host visualization at the bottom left of the main site.

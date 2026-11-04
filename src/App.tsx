@@ -5,6 +5,7 @@ import {
   type DiagramNode, type DiagramProject, type DiagramSpec, type Template,
 } from "./diagram";
 import { EquipmentNode } from "./EquipmentNode";
+import { validateProject, inspectTopology } from "./topologyValidation";
 import { buildTechnicalSheets, downloadTechnicalSvg, exportTechnicalPdf } from "./technicalSheets";
 
 type ProjectSpec = DiagramSpec & {
@@ -33,12 +34,14 @@ export default function App() {
   const [version, setVersion] = useState(0);
   const [mode, setMode] = useState<"sheets" | "editor">("sheets");
   const [sheetIndex, setSheetIndex] = useState(0);
+  const [sheetZoom, setSheetZoom] = useState<"fit" | 100 | 150>("fit");
   const [message, setMessage] = useState("Dados salvos localmente neste navegador.");
   const [exporting, setExporting] = useState(false);
   const selected = nodes.find(n => n.id === selectedId);
   const project: DiagramProject = {version:1, spec, nodes, edges};
   const sheets = useMemo(() => buildTechnicalSheets({version:1,spec,nodes,edges}),[spec,nodes,edges]);
   const activeSheet = sheets[sheetIndex] ?? sheets[0]!;
+  const findings = useMemo(() => inspectTopology(project), [spec, nodes, edges]);
   const visualNodes = useMemo(() => nodes.map(n => ({...n,type:"equipment",style:undefined})),[nodes]);
 
   useEffect(() => {saveProject({version:1,spec,nodes,edges});},[spec,nodes,edges]);
@@ -78,10 +81,10 @@ export default function App() {
       const parsed: unknown = JSON.parse(await file.text());
       if(!parsed || typeof parsed !== "object") throw new Error("Arquivo inválido.");
       const value = parsed as Partial<DiagramProject>;
-      if(value.version!==1 || !value.spec || !Array.isArray(value.nodes) || !Array.isArray(value.edges)) {
-        throw new Error("Projeto incompatível com a versão 1.");
-      }
-      setSpec(value.spec as ProjectSpec);setNodes(value.nodes);setEdges(value.edges);
+      const validation = validateProject(value);
+      if (!validation.valid) throw new Error(validation.error);
+      if (!validation.valid) return;
+      setSpec(validation.project.spec as ProjectSpec);setNodes(validation.project.nodes);setEdges(validation.project.edges);
       setSelectedId(null);setVersion(v=>v+1);
       setMessage("Projeto importado.");
     } catch(e) {
@@ -172,6 +175,15 @@ export default function App() {
             <button className="danger" onClick={removeSelected}>Excluir equipamento</button>
           </div> : <p className="hint">Use o modo Editor para arrastar equipamentos, alterar nomes e conectar as interfaces.</p>}
           <div className="separator"/>
+          <span className="field-title">Diagnóstico da topologia</span>
+          <div className="topology-diagnostics" aria-live="polite">
+            {findings.length === 0 ? <p className="diagnostic-ok">Nenhuma inconsistência estrutural detectada.</p> : findings.map((finding, index) =>
+              <p className={finding.level === "error" ? "diagnostic-error" : "diagnostic-warning"} key={`${finding.code}-${index}`}>
+                <strong>{finding.level === "error" ? "Erro" : "Atenção"}:</strong> {finding.message}
+              </p>
+            )}
+          </div>
+          <div className="separator"/>
           <span className="field-title">Exportações</span>
           <button className="primary wide export-main" disabled={exporting} onClick={()=>void pdfSheets()}>
             {exporting ? "Gerando caderno..." : "Exportar caderno técnico · PDF A3"}
@@ -207,8 +219,17 @@ export default function App() {
               ))}
             </div>
             <div className="sheet-stage">
-              <div className="sheet-topline"><strong>{activeSheet.title}</strong><span>Folha {sheetIndex+1} de {sheets.length} · visualização vetorial</span></div>
-              <div className="sheet-preview" dangerouslySetInnerHTML={{__html:activeSheet.svg}}/>
+              <div className="sheet-topline"><strong>{activeSheet.title}</strong>
+                <div className="sheet-view-controls"><span>Folha {sheetIndex+1} de {sheets.length} · visualização vetorial</span>
+                  <label htmlFor="sheet-zoom">Ampliação</label>
+                  <select id="sheet-zoom" aria-label="Ampliação da prancha" value={String(sheetZoom)} onChange={e=>setSheetZoom(e.target.value==="fit"?"fit":Number(e.target.value) as 100|150)}>
+                    <option value="fit">Ajustar à tela</option><option value="100">100%</option><option value="150">150%</option>
+                  </select>
+                </div>
+              </div>
+              <div className={sheetZoom==="fit"?"sheet-preview sheet-preview-fit":"sheet-preview sheet-preview-zoom"} key={activeSheet.id+"-"+sheetZoom}>
+                <div className="sheet-artwork" style={sheetZoom==="fit"?undefined:{width:1600*sheetZoom/100, flex:"0 0 auto"}} dangerouslySetInnerHTML={{__html:activeSheet.svg}}/>
+              </div>
             </div>
           </> : <>
             <div className="flow-wrap">
